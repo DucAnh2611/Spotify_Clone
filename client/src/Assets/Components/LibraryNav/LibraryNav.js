@@ -9,32 +9,43 @@ import LibraryLogin from "./LibraryLogin";
 import EmptyLibrary from "./EmptyLibrary";
 import { createPlaylist, getPlaylist } from "../../API/playlist";
 import { getFollowArtist } from "../../API/artist";
+import { getShow } from "../../API/show";
 
 export default function LibraryNav({...props}) {
-    
-    const [access_token, SetAccessToken] = useState(JSON.parse(localStorage.getItem("access_token")));
-    const [listLib, SetListLib] = useState([]);
-    const [lisArtist, SetListArtist] = useState([]);
-    const [listPlaylist, SetListPlaylist] = useState([]);
-    const [listPodcastAndShow, SetListPodCastAndShow]= useState([]);
-    const [userInfo, SetUserInfo] = useState({});
+
     const openListRef = useRef(null);
     const openRequireLoginRef = useRef(null);
+
+    const [access_token, SetAccessToken] = useState(JSON.parse(localStorage.getItem("access_token")));
+    const [listLib, SetListLib] = useState({});
+    const [userInfo, SetUserInfo] = useState({});
+
     const [openRequireLogin, SetOpenRequireLogin] = useState(false);
     const [openCreatePlayList, SetOpenCreatePlayList] = useState(false);
 
     const handleCreatePlaylist = async () => {
-        let url = `https://api.spotify.com/v1/users/${userInfo.id}/playlists `
         let create = await createPlaylist(userInfo, access_token);
-        console.log(create);
+        console.log(access_token);
+    }
+
+    const getListLib = async () => {
+        let artist = await getFollowArtist(access_token);
+        let playlist = await getPlaylist(access_token);
+        let podcastAndshow= await getShow(access_token);
+
+        SetListLib({
+            artist: artist.artists.items || [], 
+            playlist: playlist.items || [], 
+            padcastAndShow: podcastAndshow.items || []
+        })
     }
 
     useEffect(() => {
         SetUserInfo(JSON.parse(sessionStorage.getItem("me_token")));
-        SetListArtist(getFollowArtist(access_token));
-        SetListPlaylist(getPlaylist(access_token))
+        getListLib()
+
         if(access_token) {
-            SetAccessToken(access_token.access_token);
+            SetAccessToken(access_token);
         }
         else SetAccessToken(null);
 
@@ -110,7 +121,7 @@ export default function LibraryNav({...props}) {
             {
                 access_token 
                 ? (
-                    <LibraryLogin/>
+                    <LibraryLogin listLibrary={listLib}/>
                 )
                 : (
                     <div className="
